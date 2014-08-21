@@ -1,0 +1,16 @@
+---
+os_versions:
+  - havana
+  - icehouse
+  - master
+
+os_projects:
+  - ceilometer
+  - cinder
+  - glance
+  - heat
+  - horizon
+  - keystone
+  - neutron
+  - nova
+  - swift

@@ -1,0 +1,67 @@
+---
+- name : "install required packages"
+  sudo: yes
+  apt : pkg={{item}} state=installed
+  with_items:
+    - git
+    - python-pip
+
+- name : "install required python packages"
+  sudo: yes
+  pip : name={{item}}
+  with_items:
+    - virtualenv
+    - virtualenvwrapper
+
+- name : "create repository dir"
+  file : path=~/repos state=directory
+
+- name : "create repository dir"
+  file : path=~/repos/openstack_{{item}} state=directory
+  with_items: os_versions
+
+- name : "create PyCharm dir"
+  file : path=~/PycharmProjects state=directory
+
+- name : "clone openstack repository"
+  git : repo=https://github.com/openstack/{{item}}.git dest=~/repos/openstack_master/{{item}}
+  with_items: os_projects
+
+- name : "create project directories"
+  file : path=~/PycharmProjects/os_{{item[0]}}_{{item[1]}} state=directory
+  with_nested:
+    - os_versions
+    - os_projects
+
+- name : "create .idea directories"
+  file : path=~/PycharmProjects/os_{{item[0]}}_{{item[1]}}/.idea state=directory
+  with_nested:
+    - os_versions
+    - os_projects
+
+#- name : "create virtualenv"
+#  shell : virtualenv os_{{item[0]}}_{{item[1]}} chdir=~/.virtualenvs
+#  with_nested:
+#    - os_versions
+#    - os_projects
+
+- name : "copy .idea files"
+  copy : src={{item[0]}} dest=~/PycharmProjects/os_{{item[1]}}_{{item[2]}}/.idea/{{item[0]}}
+  with_nested:
+    - [ 'encodings.xml', 'scopes', 'vcs.xml' ]
+    - os_versions
+    - os_projects
+
+- name : "copy .idea template"
+  template : src={{item[0]}}.j2 dest=~/PycharmProjects/os_{{item[1]}}_{{item[2]}}/.idea/os_{{item[1]}}_{{item[2]}}.iml
+  with_nested:
+    - [ 'template.iml' ]
+    - os_versions
+    - os_projects
+
+- name : "copy .idea from templates"
+  template : src={{item[0]}}.j2 dest=~/PycharmProjects/os_{{item[1]}}_{{item[2]}}/.idea/{{item[0]}}
+  with_nested:
+    - [ 'misc.xml', 'modules.xml', 'workspace.xml' ]
+    - os_versions
+    - os_projects
