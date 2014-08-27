@@ -5,6 +5,13 @@
   with_items:
     - git
     - python-pip
+    - build-essential
+    - python-dev
+    - libffi-dev
+    - libxml2
+    - libxml2-dev
+    - libxslt1.1
+    - libxslt1-dev
 
 - name : "install required python packages"
   sudo: yes
@@ -17,15 +24,24 @@
   file : path=~/repos state=directory
 
 - name : "create repository dir"
-  file : path=~/repos/openstack_{{item}} state=directory
-  with_items: os_versions
+  file : path=~/repos/openstack state=directory
 
 - name : "create PyCharm dir"
   file : path=~/PycharmProjects state=directory
 
 - name : "clone openstack repository"
-  git : repo=https://github.com/openstack/{{item}}.git dest=~/repos/openstack_master/{{item}}
+  git : repo=https://github.com/openstack/{{item}}.git dest=~/repos/openstack/{{item}}
   with_items: os_projects
+
+- name : "copy repository"
+  shell : cp -r ~/repos/openstack ~/repos/openstack_{{item}}
+  with_items: os_versions
+
+- name : "checkout branch"
+  shell : git branch {{item[0]}} chdir=~/repos/openstack_{{item[0]}}/{{item[1]}}
+  with_nested:
+    - os_versions
+    - os_projects
 
 - name : "create project directories"
   file : path=~/PycharmProjects/os_{{item[0]}}_{{item[1]}} state=directory
@@ -39,11 +55,11 @@
     - os_versions
     - os_projects
 
-#- name : "create virtualenv"
-#  shell : virtualenv os_{{item[0]}}_{{item[1]}} chdir=~/.virtualenvs
-#  with_nested:
-#    - os_versions
-#    - os_projects
+- name : "create virtualenv"
+  shell : virtualenv os_{{item[0]}}_{{item[1]}} chdir=~/.virtualenvs
+  with_nested:
+    - os_versions
+    - os_projects
 
 - name : "copy .idea files"
   copy : src={{item[0]}} dest=~/PycharmProjects/os_{{item[1]}}_{{item[2]}}/.idea/{{item[0]}}
@@ -63,5 +79,11 @@
   template : src={{item[0]}}.j2 dest=~/PycharmProjects/os_{{item[1]}}_{{item[2]}}/.idea/{{item[0]}}
   with_nested:
     - [ 'misc.xml', 'modules.xml', 'workspace.xml' ]
+    - os_versions
+    - os_projects
+
+- name : "install packages in virtualenv"
+  pip : name=~/repos/openstack_{{item[0]}}/{{item[1]}} virtualenv=~/.virtualenvs/os_{{item[0]}}_{{item[1]}} state=present
+  with_nested:
     - os_versions
     - os_projects
